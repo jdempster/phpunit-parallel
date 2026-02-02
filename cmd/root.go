@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/alexdempster44/phpunit-parallel/internal/config"
+	"github.com/alexdempster44/phpunit-parallel/internal/runner"
 	"github.com/spf13/cobra"
 )
 
@@ -54,22 +56,13 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to parse config: %w", err)
 		}
 
-		fmt.Printf("\n")
-		fmt.Printf("Runner Config:\n")
-		fmt.Printf("  Workers: %d\n", runnerConfig.Workers)
-		fmt.Printf("  Config build dir: %s\n", runnerConfig.ConfigBuildDir)
-		fmt.Printf("  Run command: %s\n", runnerConfig.RunCommand)
-		fmt.Printf("\n")
-		fmt.Printf("Bootstrap: %s\n", cfg.Bootstrap)
-		fmt.Printf("Test Suites:\n")
-		for _, suite := range cfg.TestSuites.TestSuites {
-			fmt.Printf("  - %s\n", suite.Name)
-			for _, dir := range suite.Directories {
-				fmt.Printf("      path: %s\n", dir)
-			}
+		baseDir := filepath.Dir(configFile)
+		if baseDir == "." {
+			baseDir, _ = os.Getwd()
 		}
 
-		return nil
+		r := runner.New(cfg, runnerConfig, baseDir)
+		return r.Run()
 	},
 }
 
