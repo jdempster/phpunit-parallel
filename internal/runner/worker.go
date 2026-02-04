@@ -23,9 +23,10 @@ type Worker struct {
 	Bootstrap      string
 	RawConfigXML   []byte
 	Output         output.Output
+	Filter         string
 }
 
-func NewWorker(id int, tests []distributor.TestFile, runCommand, baseDir, configBuildDir, bootstrap string, rawConfigXML []byte, out output.Output) *Worker {
+func NewWorker(id int, tests []distributor.TestFile, runCommand, baseDir, configBuildDir, bootstrap string, rawConfigXML []byte, out output.Output, filter string) *Worker {
 	return &Worker{
 		ID:             id,
 		Tests:          tests,
@@ -35,6 +36,7 @@ func NewWorker(id int, tests []distributor.TestFile, runCommand, baseDir, config
 		Bootstrap:      bootstrap,
 		RawConfigXML:   rawConfigXML,
 		Output:         out,
+		Filter:         filter,
 	}
 }
 
@@ -46,6 +48,9 @@ func (w *Worker) Run() error {
 	defer func() { _ = os.Remove(configPath) }()
 
 	args := []string{"--configuration", configPath, "--teamcity"}
+	if w.Filter != "" {
+		args = append(args, "--filter", w.Filter)
+	}
 	var cmd *exec.Cmd
 	if strings.Contains(w.RunCommand, " ") {
 		shellArgs := w.RunCommand + " " + strings.Join(args, " ")

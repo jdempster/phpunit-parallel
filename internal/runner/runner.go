@@ -73,6 +73,7 @@ func (r *Runner) createWorkers(dist distributor.Distribution) []*Worker {
 			r.PHPUnitConfig.Bootstrap,
 			r.PHPUnitConfig.RawXML,
 			r.Output,
+			r.RunnerConfig.Filter,
 		))
 	}
 	return workers
@@ -117,7 +118,7 @@ func (r *Runner) findTestFiles(dir, suiteName string, excludes []string) ([]dist
 			return nil
 		}
 
-		if !strings.HasSuffix(path, "Test.php") {
+		if !strings.HasSuffix(path, r.RunnerConfig.TestSuffix) {
 			return nil
 		}
 

@@ -50,6 +50,12 @@ var rootCmd = &cobra.Command{
 		if cmd.Flags().Changed("run-command") {
 			runnerConfig.RunCommand, _ = cmd.Flags().GetString("run-command")
 		}
+		if cmd.Flags().Changed("filter") {
+			runnerConfig.Filter, _ = cmd.Flags().GetString("filter")
+		}
+		if cmd.Flags().Changed("test-suffix") {
+			runnerConfig.TestSuffix, _ = cmd.Flags().GetString("test-suffix")
+		}
 
 		return nil
 	},
@@ -84,6 +90,8 @@ func init() {
 	rootCmd.Flags().IntVarP(&runnerConfig.Workers, "workers", "w", runnerConfig.Workers, "Number of parallel workers")
 	rootCmd.Flags().StringVar(&runnerConfig.ConfigBuildDir, "config-build-dir", runnerConfig.ConfigBuildDir, "Directory for generated config files")
 	rootCmd.Flags().StringVar(&runnerConfig.RunCommand, "run-command", runnerConfig.RunCommand, "Command to run PHPUnit")
+	rootCmd.Flags().StringVar(&runnerConfig.Filter, "filter", "", "Filter which tests to run (passed to PHPUnit --filter)")
+	rootCmd.Flags().StringVar(&runnerConfig.TestSuffix, "test-suffix", runnerConfig.TestSuffix, "Suffix for test files")
 }
 
 func Execute() {

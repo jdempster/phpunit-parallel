@@ -11,6 +11,8 @@ type Runner struct {
 	Workers        int      `xml:"workers"`
 	ConfigBuildDir string   `xml:"config-build-dir"`
 	RunCommand     string   `xml:"run-command"`
+	TestSuffix     string   `xml:"test-suffix"`
+	Filter         string   `xml:"-"` // CLI-only, not in XML config
 }
 
 func DefaultRunner() *Runner {
@@ -18,6 +20,7 @@ func DefaultRunner() *Runner {
 		Workers:        runtime.NumCPU(),
 		ConfigBuildDir: ".phpunit-parallel",
 		RunCommand:     "vendor/bin/phpunit",
+		TestSuffix:     "Test.php",
 	}
 }
 
