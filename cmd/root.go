@@ -56,6 +56,12 @@ var rootCmd = &cobra.Command{
 		if cmd.Flags().Changed("test-suffix") {
 			runnerConfig.TestSuffix, _ = cmd.Flags().GetString("test-suffix")
 		}
+		if cmd.Flags().Changed("group") {
+			runnerConfig.Group, _ = cmd.Flags().GetString("group")
+		}
+		if cmd.Flags().Changed("exclude-group") {
+			runnerConfig.ExcludeGroup, _ = cmd.Flags().GetString("exclude-group")
+		}
 
 		return nil
 	},
@@ -92,6 +98,8 @@ func init() {
 	rootCmd.Flags().StringVar(&runnerConfig.RunCommand, "run-command", runnerConfig.RunCommand, "Command to run PHPUnit")
 	rootCmd.Flags().StringVar(&runnerConfig.Filter, "filter", "", "Filter which tests to run (passed to PHPUnit --filter)")
 	rootCmd.Flags().StringVar(&runnerConfig.TestSuffix, "test-suffix", runnerConfig.TestSuffix, "Suffix for test files")
+	rootCmd.Flags().StringVar(&runnerConfig.Group, "group", "", "Only run tests from the specified group(s)")
+	rootCmd.Flags().StringVar(&runnerConfig.ExcludeGroup, "exclude-group", "", "Exclude tests from the specified group(s)")
 }
 
 func Execute() {

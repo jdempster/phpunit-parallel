@@ -13,6 +13,8 @@ type Runner struct {
 	RunCommand     string   `xml:"run-command"`
 	TestSuffix     string   `xml:"test-suffix"`
 	Filter         string   `xml:"-"` // CLI-only, not in XML config
+	Group          string   `xml:"-"` // CLI-only, not in XML config
+	ExcludeGroup   string   `xml:"-"` // CLI-only, not in XML config
 }
 
 func DefaultRunner() *Runner {

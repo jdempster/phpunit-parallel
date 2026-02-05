@@ -74,6 +74,8 @@ func (r *Runner) createWorkers(dist distributor.Distribution) []*Worker {
 			r.PHPUnitConfig.RawXML,
 			r.Output,
 			r.RunnerConfig.Filter,
+			r.RunnerConfig.Group,
+			r.RunnerConfig.ExcludeGroup,
 		))
 	}
 	return workers

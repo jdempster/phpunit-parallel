@@ -24,9 +24,11 @@ type Worker struct {
 	RawConfigXML   []byte
 	Output         output.Output
 	Filter         string
+	Group          string
+	ExcludeGroup   string
 }
 
-func NewWorker(id int, tests []distributor.TestFile, runCommand, baseDir, configBuildDir, bootstrap string, rawConfigXML []byte, out output.Output, filter string) *Worker {
+func NewWorker(id int, tests []distributor.TestFile, runCommand, baseDir, configBuildDir, bootstrap string, rawConfigXML []byte, out output.Output, filter, group, excludeGroup string) *Worker {
 	return &Worker{
 		ID:             id,
 		Tests:          tests,
@@ -37,6 +39,8 @@ func NewWorker(id int, tests []distributor.TestFile, runCommand, baseDir, config
 		RawConfigXML:   rawConfigXML,
 		Output:         out,
 		Filter:         filter,
+		Group:          group,
+		ExcludeGroup:   excludeGroup,
 	}
 }
 
@@ -50,6 +54,12 @@ func (w *Worker) Run() error {
 	args := []string{"--configuration", configPath, "--teamcity"}
 	if w.Filter != "" {
 		args = append(args, "--filter", w.Filter)
+	}
+	if w.Group != "" {
+		args = append(args, "--group", w.Group)
+	}
+	if w.ExcludeGroup != "" {
+		args = append(args, "--exclude-group", w.ExcludeGroup)
 	}
 	var cmd *exec.Cmd
 	if strings.Contains(w.RunCommand, " ") {
