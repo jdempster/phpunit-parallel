@@ -1,4 +1,4 @@
-bin/
+/bin/
 
 # Composer plugin downloaded binary
 composer/.binary/
