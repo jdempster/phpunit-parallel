@@ -1,5 +1,8 @@
 bin/
 
+# Composer plugin downloaded binary
+composer/.binary/
+
 # PHP/Composer
 testdata/vendor/
 testdata/composer.lock
