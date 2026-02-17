@@ -1,8 +1,11 @@
 package tui
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -24,7 +27,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case TickMsg:
-		if m.phase == PhaseRunning {
+		if m.phase == PhaseRunning || m.phase == PhaseCleanup {
 			return m, tick()
 		}
 		return m, nil
@@ -53,9 +56,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.handleTestCount(msg)
 		return m, nil
 
+	case CleanupProgressMsg:
+		if m.phase == PhaseRunning {
+			m.endTime = time.Now()
+		}
+		m.phase = PhaseCleanup
+		m.cleanupCompleted = msg.Completed
+		m.cleanupTotal = msg.Total
+		return m, tick()
+
+	case CopyNoticeExpiredMsg:
+		m.copyNotice = ""
+		return m, nil
+
 	case FinishMsg:
 		m.phase = PhaseComplete
-		m.endTime = time.Now()
+		if m.endTime.IsZero() {
+			m.endTime = time.Now()
+		}
 		m.activePanel = PanelErrors
 		return m, nil
 	}
@@ -68,11 +86,7 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	switch {
 	case key.Matches(msg, keys.Quit):
-		if m.phase == PhaseComplete || m.phase == PhaseExploring {
-			m.quitting = true
-			return m, tea.Quit
-		}
-		if msg.String() == "ctrl+c" {
+		if m.phase == PhaseComplete || m.phase == PhaseExploring || msg.String() == "ctrl+c" {
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -107,6 +121,9 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.moveCursor(10)
 		return m, nil
 
+	case key.Matches(msg, keys.Copy):
+		return m.copyError()
+
 	}
 
 	return m, nil
@@ -127,6 +144,37 @@ func (m *Model) moveCursor(delta int) {
 			m.errorCursor = maxCursor
 		}
 	}
+}
+
+func (m *Model) copyError() (tea.Model, tea.Cmd) {
+	if m.activePanel != PanelErrors || len(m.errors) == 0 {
+		return m, nil
+	}
+
+	if m.errorCursor < 0 || m.errorCursor >= len(m.errors) {
+		return m, nil
+	}
+
+	e := m.errors[m.errorCursor]
+	var parts []string
+	parts = append(parts, e.TestName)
+	if e.Message != "" {
+		parts = append(parts, e.Message)
+	}
+	if e.Details != "" {
+		parts = append(parts, e.Details)
+	}
+	text := strings.Join(parts, "\n\n")
+
+	if err := clipboard.WriteAll(text); err != nil {
+		m.copyNotice = fmt.Sprintf("Copy failed: %s", err)
+	} else {
+		m.copyNotice = "Copied to clipboard!"
+	}
+
+	return m, tea.Tick(2*time.Second, func(_ time.Time) tea.Msg {
+		return CopyNoticeExpiredMsg{}
+	})
 }
 
 func (m *Model) toggle() {

@@ -3,9 +3,13 @@ package runner
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"syscall"
 
 	"github.com/alexdempster44/phpunit-parallel/internal/config"
 	"github.com/alexdempster44/phpunit-parallel/internal/distributor"
@@ -34,10 +38,53 @@ func (r *Runner) Run() error {
 		return fmt.Errorf("failed to discover tests: %w", err)
 	}
 
+	if r.RunnerConfig.Before != "" {
+		cmd := exec.Command("sh", "-c", r.RunnerConfig.Before)
+		cmd.Dir = r.BaseDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("before command failed: %w", err)
+		}
+	}
+
 	dist := distributor.RoundRobin(tests, r.RunnerConfig.Workers)
 	workers := r.createWorkers(dist)
 
-	r.Output.Start(len(tests), len(workers))
+	var cleanupOnce sync.Once
+	cleanup := func() {
+		cleanupOnce.Do(func() {
+			if r.RunnerConfig.AfterWorker == "" {
+				return
+			}
+			// Ignore signals during cleanup so a second Ctrl+C doesn't kill the process
+			signal.Ignore(syscall.SIGINT, syscall.SIGTERM)
+			defer signal.Reset(syscall.SIGINT, syscall.SIGTERM)
+			total := len(workers)
+			var completed atomic.Int32
+			r.Output.CleanupProgress(0, total)
+			var cwg sync.WaitGroup
+			for _, w := range workers {
+				cwg.Add(1)
+				go func(w *Worker) {
+					defer cwg.Done()
+					w.runAfterWorker()
+					done := int(completed.Add(1))
+					r.Output.CleanupProgress(done, total)
+				}(w)
+			}
+			cwg.Wait()
+		})
+	}
+
+	r.Output.SetOnCancel(cleanup)
+	r.Output.Start(output.StartOptions{
+		TestCount:    len(tests),
+		WorkerCount:  len(workers),
+		Filter:       r.RunnerConfig.Filter,
+		Group:        r.RunnerConfig.Group,
+		ExcludeGroup: r.RunnerConfig.ExcludeGroup,
+	})
 
 	var wg sync.WaitGroup
 
@@ -53,7 +100,18 @@ func (r *Runner) Run() error {
 	}
 
 	wg.Wait()
+	cleanup()
 	r.Output.Finish()
+
+	if r.RunnerConfig.After != "" {
+		cmd := exec.Command("sh", "-c", r.RunnerConfig.After)
+		cmd.Dir = r.BaseDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("after command failed: %w", err)
+		}
+	}
 
 	return nil
 }
@@ -67,7 +125,9 @@ func (r *Runner) createWorkers(dist distributor.Distribution) []*Worker {
 		workers = append(workers, NewWorker(
 			bucket.WorkerID,
 			bucket.Tests,
-			r.RunnerConfig.RunCommand,
+			r.RunnerConfig.BeforeWorker,
+			r.RunnerConfig.RunWorker,
+			r.RunnerConfig.AfterWorker,
 			r.BaseDir,
 			r.RunnerConfig.ConfigBuildDir,
 			r.PHPUnitConfig.Bootstrap,

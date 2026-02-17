@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -10,21 +12,32 @@ import (
 )
 
 type TUIOutput struct {
-	program *tea.Program
-	model   *Model
-	mu      sync.Mutex
+	program  *tea.Program
+	model    *Model
+	mu       sync.Mutex
+	onCancel func()
+	stopped  bool
 }
 
 func New() *TUIOutput {
 	return &TUIOutput{}
 }
 
-func (t *TUIOutput) Start(testCount, workerCount int) {
-	t.model = NewModel(testCount, workerCount)
+func (t *TUIOutput) Start(opts output.StartOptions) {
+	t.model = NewModel(opts)
 	t.program = tea.NewProgram(t.model, tea.WithAltScreen())
 
 	go func() {
 		_, _ = t.program.Run()
+		if t.model.quitting && t.model.phase != PhaseComplete {
+			t.mu.Lock()
+			t.stopped = true
+			t.mu.Unlock()
+			if t.onCancel != nil {
+				t.onCancel()
+			}
+			os.Exit(130)
+		}
 	}()
 }
 
@@ -104,6 +117,30 @@ func (t *TUIOutput) WorkerComplete(workerID int, err error) {
 			Error:    err,
 		})
 	}
+}
+
+func (t *TUIOutput) CleanupProgress(completed, total int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.stopped {
+		fmt.Fprintf(os.Stderr, "\rCleaning up workers... %d/%d", completed, total)
+		if completed >= total {
+			fmt.Fprintln(os.Stderr)
+		}
+		return
+	}
+
+	if t.program != nil {
+		t.program.Send(CleanupProgressMsg{
+			Completed: completed,
+			Total:     total,
+		})
+	}
+}
+
+func (t *TUIOutput) SetOnCancel(fn func()) {
+	t.onCancel = fn
 }
 
 func (t *TUIOutput) Finish() {

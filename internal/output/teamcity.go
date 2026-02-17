@@ -33,7 +33,7 @@ func NewTeamCityOutput() *TeamCityOutput {
 	}
 }
 
-func (t *TeamCityOutput) Start(testCount, workerCount int) {}
+func (t *TeamCityOutput) Start(opts StartOptions) {}
 
 func (t *TeamCityOutput) WorkerStart(workerID, testCount int) {
 	t.mu.Lock()
@@ -142,5 +142,9 @@ func (t *TeamCityOutput) WorkerComplete(workerID int, err error) {
 	w.suites = nil
 
 }
+
+func (t *TeamCityOutput) CleanupProgress(completed, total int) {}
+
+func (t *TeamCityOutput) SetOnCancel(fn func()) {}
 
 func (t *TeamCityOutput) Finish() {}
