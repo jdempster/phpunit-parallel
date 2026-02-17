@@ -156,6 +156,10 @@ func init() {
 	rootCmd.Flags().StringVar(&runnerConfig.ExcludeGroup, "exclude-group", "", "Exclude tests from the specified group(s)")
 }
 
+func SetVersionInfo(version string) {
+	rootCmd.Version = version
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
