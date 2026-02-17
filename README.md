@@ -2,8 +2,8 @@
 
 [![License](https://img.shields.io/github/license/alexdempster44/phpunit-parallel)](https://github.com/alexdempster44/phpunit-parallel/blob/main/LICENSE)
 [![Release](https://img.shields.io/github/v/release/alexdempster44/phpunit-parallel)](https://github.com/alexdempster44/phpunit-parallel/releases)
+[![Homebrew](https://img.shields.io/badge/homebrew-alexdempster44%2Ftap-orange)](https://github.com/alexdempster44/homebrew-tap)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/alexdempster44/phpunit-parallel)](https://github.com/alexdempster44/phpunit-parallel)
-[![PHP Version](https://img.shields.io/packagist/dependency-v/alexdempster44/phpunit-parallel/php)](https://packagist.org/packages/alexdempster44/phpunit-parallel)
 [![CI](https://img.shields.io/github/actions/workflow/status/alexdempster44/phpunit-parallel/ci.yml?label=CI&logo=github)](https://github.com/alexdempster44/phpunit-parallel/actions/workflows/ci.yml)
 [![CD](https://img.shields.io/github/actions/workflow/status/alexdempster44/phpunit-parallel/cd.yml?label=CD&logo=github)](https://github.com/alexdempster44/phpunit-parallel/actions/workflows/cd.yml)
 [![GitHub issues](https://img.shields.io/github/issues/alexdempster44/phpunit-parallel)](https://github.com/alexdempster44/phpunit-parallel/issues)
@@ -21,10 +21,10 @@ A CLI tool to run PHPUnit tests in parallel, with a beautiful terminal UI.
 
 ## Installation
 
-### Using Composer (Recommended)
+### Using Homebrew (Recommended)
 
 ```bash
-composer require --dev alexdempster44/phpunit-parallel
+brew install alexdempster44/tap/phpunit-parallel
 ```
 
 ### Using Go
