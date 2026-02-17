@@ -1,9 +1,5 @@
 /bin/
 
-# Composer plugin downloaded binary
-composer/.binary/
-
-# PHP/Composer
 vendor/
 .phpunit-parallel/
 /.idea
