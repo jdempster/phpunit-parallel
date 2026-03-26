@@ -92,6 +92,7 @@ func (r *Runner) Run() error {
 	})
 
 	var wg sync.WaitGroup
+	var failedWorkers atomic.Int32
 
 	for _, worker := range workers {
 		wg.Add(1)
@@ -101,6 +102,9 @@ func (r *Runner) Run() error {
 			r.Output.WorkerStart(w.ID, w.TestCount())
 			err := w.Run()
 			r.Output.WorkerComplete(w.ID, err)
+			if err != nil {
+				failedWorkers.Add(1)
+			}
 		}(worker)
 	}
 
@@ -117,6 +121,10 @@ func (r *Runner) Run() error {
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("after command failed: %w", err)
 		}
+	}
+
+	if failedWorkers.Load() > 0 {
+		return fmt.Errorf("tests failed")
 	}
 
 	return nil
